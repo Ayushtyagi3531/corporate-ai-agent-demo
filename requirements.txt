@@ -12,10 +12,10 @@ sqlalchemy
 
 faiss-cpu
 sentence-transformers
+langchain-huggingface
 pypdf
 
 python-dotenv
 
-# Crucial for Render deployment production server
 fastapi
 uvicorn
