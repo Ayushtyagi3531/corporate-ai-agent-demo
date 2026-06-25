@@ -1,27 +1,18 @@
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
-# Load embedding model
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+_db = None
 
-# Load FAISS vector database
-vectorstore = FAISS.load_local(
-    "vector_db",
-    embeddings,
-    allow_dangerous_deserialization=True
-)
-def retrieve_context(question):
-    # Retrieve top 3 relevant text chunks along with metadata tracking
-    docs = vectorstore.similarity_search(question, k=3)
+def get_vector_db():
+    global _db
+    if _db is None:
+        print("📥 Loading embedding model and FAISS index into memory...")
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        # Ensure the path points correctly to your committed index directory
+        _db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    return _db
 
-    formatted_chunks = []
-    for doc in docs:
-        # Pull filename metadata to help Gemini context-map the text rules
-        source = doc.metadata.get("source", "Unknown Document")
-        chunk_text = f"[Source File: {source}]\n{doc.page_content}"
-        formatted_chunks.append(chunk_text)
-
-    context = "\n\n---\n\n".join(formatted_chunks)
-    return context
+def retrieve_context(query: str):
+    db = get_vector_db() # Get index instance dynamically
+    docs = db.similarity_search(query, k=3)
+    return "\n".join([doc.page_content for doc in docs])
