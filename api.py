@@ -76,8 +76,16 @@ async def process_corporate_query(payload: QueryRequest):
             combined_context = rag_context
 
         elif route in ["both", "hybrid"]:
-            sql_result = execute_sql(question)
-            rag_context = retrieve_context(question)
+            import asyncio
+            
+            print("⏳ Running SQL and RAG concurrently to minimize latency...")
+            
+            # This runs both operations at the exact same time!
+            sql_task = asyncio.to_thread(execute_sql, question)
+            rag_task = asyncio.to_thread(retrieve_context, question)
+            
+            # Wait for both tasks to complete together
+            sql_result, rag_context = await asyncio.gather(sql_task, rag_task)
             
             combined_context = f"""
             SQL Result:
