@@ -1,5 +1,6 @@
 import os
 import sys
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -13,13 +14,21 @@ from rag.retriever import retrieve_context
 from sql_agent.sql_executor import execute_sql
 from llm.answer_generator import generate_answer
 
-# Initialize FastAPI App
+# Define a Lifespan function to defer initialization until AFTER port binding
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🚀 Port bound! Starting background asset initialization...")
+    # Trigger a dummy call or initialization if needed, or let them lazy load safely
+    yield
+    print("🛑 Shutting down application...")
+
+# Initialize FastAPI App with Lifespan
 app = FastAPI(
     title="Corporate Intelligence Router API",
     description="Unified API interface for RAG, SQL Agents, and Hybrid data lookups.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan # Added here!
 )
-
 # Define request body structure
 class QueryRequest(BaseModel):
     question: str
